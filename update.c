@@ -30,6 +30,8 @@
 #include <fnmatch.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <pwd.h>
+#include <grp.h>
 
 static int connection_closed_error = 1;
 
@@ -452,9 +454,22 @@ auto_resolve_entry_point:
 		goto got_error;
 	}
 
-	conn_printf("SETOWN %s %s %d %d\n",
+	struct passwd *pw = getpwuid(st.st_uid);
+	struct group *gr = getgrgid(st.st_gid);
+	char *pw_name;
+	char *gr_name;
+	if(pw == 0)
+	        pw_name = "-";
+	else
+	        pw_name = pw->pw_name;
+	if(gr == 0)
+	        gr_name = "-";
+	else
+	        gr_name = gr->gr_name;
+	conn_printf("SETOWN %s %s %d %d %s %s\n",
 			url_encode(key), url_encode(filename),
-			st.st_uid, st.st_gid);
+			st.st_uid, st.st_gid,
+			url_encode(pw_name), url_encode(gr_name));
 	last_conn_status = read_conn_status(filename, peername);
 	if (!is_ok_response(last_conn_status))
 		goto got_error;

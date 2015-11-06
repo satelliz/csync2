@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <pwd.h>
+#include <grp.h>
 
 #ifdef __CYGWIN__
 #include <w32api/windows.h>
@@ -690,6 +692,12 @@ void csync_daemon_session()
 			if ( !csync_ignore_uid || !csync_ignore_gid ) {
 				int uid = csync_ignore_uid ? -1 : atoi(tag[3]);
 				int gid = csync_ignore_gid ? -1 : atoi(tag[4]);
+				struct passwd *pw = getpwnam(tag[5]);
+				struct group *gr = getgrnam(tag[6]);
+				if(pw != 0)
+					uid = csync_ignore_uid ? -1 : pw->pw_uid;
+				if(gr != 0)
+					gid = csync_ignore_gid ? -1 : gr->gr_gid;
 				if ( lchown(prefixsubst(tag[2]), uid, gid) )
 					cmd_error = strerror(errno);
 			}
